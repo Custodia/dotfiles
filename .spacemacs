@@ -32,7 +32,7 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(javascript
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
@@ -66,7 +66,10 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '()
+   dotspacemacs-additional-packages
+   '(
+     counsel-projectile
+     )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -548,6 +551,13 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  (setq javascript-indent-level 2) ; javascript-mode
+  (setq js-indent-level 2) ; js-mode
+  (setq js2-basic-offset 2) ; js2-mode, in latest js2-mode, it's alias of js-indent-level
+  (setq web-mode-markup-indent-offset 2) ; web-mode, html tag in html file
+  (setq web-mode-css-indent-offset 2) ; web-mode, css in html file
+  (setq web-mode-code-indent-offset 2) ; web-mode, js code in html file
+  (setq css-indent-offset 2) ; css-mode
 )
 
 
@@ -565,6 +575,9 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
+
+  (spacemacs/set-leader-keys "p p" 'counsel-projectile-switch-project)
+  (spacemacs/set-leader-keys "p f" 'counsel-projectile-find-file)
 )
 
 
@@ -581,7 +594,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(alchemist company counsel-gtags dap-mode lsp-docker lsp-treemacs bui lsp-mode spinner elixir-mode evil-matchit flycheck-credo ggtags helm-gtags ob-elixir popwin smartparens counsel forge yaml markdown-mode ghub closql emacsql-sqlite emacsql treepy git-link git-messenger git-modes git-timemachine gitignore-templates ivy-avy ivy-hydra ivy-xref smeargle smex swiper ivy treemacs-magit magit magit-section git-commit with-editor transient wgrep ace-jump-helm-line auto-compile packed compat elisp-def elisp-slime-nav emr iedit clang-format paredit list-utils evil-mc flycheck-elsa flycheck-package package-lint flycheck helm-ag helm-descbinds helm-flx flx helm-make helm-mode-manager helm-org helm-projectile helm-swoop helm-themes helm-xref helm popup helm-core help-fns+ inspector macrostep nameless overseer f pkg-info epl quickrun treemacs-evil treemacs-icons-dired treemacs-projectile treemacs projectile cfrs ht pfuture ace-window avy posframe s dash async bind-map diminish dotenv-mode evil-evilified-state holy-mode hybrid-mode evil goto-chg hydra lv pcre2el use-package bind-key which-key)))
+   '(json-mode json-navigator hierarchy json-reformat json-snatcher add-node-modules-path impatient-mode htmlize import-js grizzl js-doc js2-refactor yasnippet multiple-cursors livid-mode nodejs-repl npm-mode prettier-js skewer-mode js2-mode simple-httpd tern web-beautify counsel-projectile alchemist company counsel-gtags dap-mode lsp-docker lsp-treemacs bui lsp-mode spinner elixir-mode evil-matchit flycheck-credo ggtags helm-gtags ob-elixir popwin smartparens counsel forge yaml markdown-mode ghub closql emacsql-sqlite emacsql treepy git-link git-messenger git-modes git-timemachine gitignore-templates ivy-avy ivy-hydra ivy-xref smeargle smex swiper ivy treemacs-magit magit magit-section git-commit with-editor transient wgrep ace-jump-helm-line auto-compile packed compat elisp-def elisp-slime-nav emr iedit clang-format paredit list-utils evil-mc flycheck-elsa flycheck-package package-lint flycheck helm-ag helm-descbinds helm-flx flx helm-make helm-mode-manager helm-org helm-projectile helm-swoop helm-themes helm-xref helm popup helm-core help-fns+ inspector macrostep nameless overseer f pkg-info epl quickrun treemacs-evil treemacs-icons-dired treemacs-projectile treemacs projectile cfrs ht pfuture ace-window avy posframe s dash async bind-map diminish dotenv-mode evil-evilified-state holy-mode hybrid-mode evil goto-chg hydra lv pcre2el use-package bind-key which-key)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
