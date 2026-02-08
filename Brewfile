@@ -42,6 +42,8 @@ cask "claude-code"
 
 cask "obsidian"
 
+cask "wezterm"
+
 ### Dependencies
 
 # Nerdfront used in most places
