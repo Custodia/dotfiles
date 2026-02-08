@@ -11,6 +11,8 @@ brew "pinentry-mac"
 brew "elixir"
 brew "erlang"
 
+brew "node"
+
 ### CLI Improvements
 
 # Terminal fuzzy finder.
@@ -43,6 +45,8 @@ cask "claude-code"
 cask "obsidian"
 
 cask "wezterm"
+
+cask "tailscale-app"
 
 ### Dependencies
 
