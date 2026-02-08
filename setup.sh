@@ -20,3 +20,5 @@ BASEDIR=$(dirname $(readlink -f $0))
 ln -sf $BASEDIR/.zshrc $HOME/.zshrc
 ln -sf $BASEDIR/.zprofile $HOME/.zprofile
 ln -sf $BASEDIR/.gitconfig $HOME/.gitconfig
+
+brew bundle
