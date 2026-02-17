@@ -1,3 +1,3 @@
 #!/bin/bash
 
-stow -R zsh git wezterm
+stow -R zsh git wezterm nvim
