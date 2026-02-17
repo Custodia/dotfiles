@@ -1,6 +1,7 @@
 [user]
-	signingkey = 3FD259F2E1258126
 	name = Jani Mäkelä
 	email = janimakelaa@gmail.com
 [commit]
 	gpgsign = true
+[include]
+	path = ~/.gitconfig.local

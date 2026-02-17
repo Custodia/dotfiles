@@ -1,6 +1,7 @@
 ### Necessary stuff
 
 brew "git"
+brew "stow"
 
 # GPG for signing git commits
 brew "gnupg"
@@ -36,9 +37,6 @@ brew "neovim"
 
 # Github CLI tool
 brew "gh"
-
-# Claude Code CLI
-cask "claude-code"
 
 ### Applications
 
