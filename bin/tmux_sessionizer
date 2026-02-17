@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# If there is exactly one parameter
+# try to extrapolate folder path
+# otherwise find what the param should be via fzf
+if [[ $# -eq 1 ]]; then
+    relative_regex="(^\.\.?(\/|$)|\/)"
+    if [[ -d "$HOME/synack/$1" ]] && ! [[ $1 =~ $relative_regex ]]; then
+        selected_folder="$HOME/synack/$1"
+    elif [[ -d "$HOME/personal/$1" ]] && ! [[ $1 =~ $relative_regex ]]; then
+        selected_folder="$HOME/personal/$1"
+    elif [[ -d "$HOME/$1" ]] && ! [[ $1 =~ $relative_regex ]]; then
+        selected_folder="$HOME/$1"
+    else
+        selected_folder=$(realpath $1)
+    fi
+else
+    # Fuzzy search all direct subfolders of ~/synack, ~/personal and ~/dotfiles
+    selected_folder=$((find ~/synack ~/personal -type d -maxdepth 1 -mindepth 1 2>/dev/null; echo "$HOME/dotfiles") | fzf -e)
+fi
+
+# If selected_folder is an empty string exit without error
+if [[ -z $selected_folder ]]; then
+    exit 0
+fi
+
+if  [[ ! -d $selected_folder ]]; then
+    echo "$selected_folder is not a folder"
+    exit 1
+fi
+
+# Get the last part of the selected path
+# then convert any "." characters to "_"
+# as not to conflict with tmux
+selected_name=$(basename "$selected_folder" | tr . _)
+
+# If tmux session with session_name does not exist yet create it
+if ! tmux has-session -t $selected_name 2> /dev/null; then
+    # Create the tmux session
+    tmux new-session -ds $selected_name -c $selected_folder
+    # Start nvim in window one and open a second window for random shells
+    tmux move-window -s "$selected_name:1" -t "$selected_name:999"
+    tmux new-window -t "$selected_name:" -c $selected_folder -n nvim nvim
+    tmux new-window -t "$selected_name:" -c $selected_folder
+    tmux kill-window -t "$selected_name:999"
+fi
+
+# If not inside tmux attach, otherwise switch sessions for client
+if [[ -z $TMUX ]]; then
+    tmux attach -t "$selected_name:1"
+else
+    tmux switch-client -t "$selected_name:1"
+fi

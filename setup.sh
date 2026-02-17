@@ -13,8 +13,6 @@ brew install git stow
 
 brew bundle
 
-mkdir -p ~/.gnupg ~/.config
-
 # Create local git config if it doesn't exist
 if [ ! -f "$HOME/.gitconfig.local" ]; then
   echo "Creating ~/.gitconfig.local — replace YOUR_SIGNING_KEY with your GPG key ID."
@@ -25,3 +23,9 @@ EOF
 fi
 
 ./link.sh
+
+# Install TPM (tmux plugin manager) if not already installed
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  echo "TPM installed. Open tmux and press C-Space + I to install plugins."
+fi

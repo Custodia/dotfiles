@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# If not inside tmux exit with an error code
+if [[ -z $TMUX ]]; then
+    echo "Not inside tmux"
+    exit 1
+fi
+
+session_count=$(tmux list-sessions -F '#S' | wc -l)
+
+# If there's only one session just exit
+if [[ $session_count -eq 1 ]]; then
+    tmux kill-session
+    exit 0
+fi
+
+current_session=$(tmux display-message -p '#{session_name}')
+last_session=$(tmux display-message -p '#{client_last_session}')
+
+if [[ -n $last_session ]]; then
+    tmux switch -t $last_session
+else
+    other_session=$(tmux list-sessions -F "#{session_name}" -f "#{!=:#{session_name},$current_session}" | head -n 1)
+    tmux switch -t $other_session
+fi
+
+tmux kill-session -t $current_session
