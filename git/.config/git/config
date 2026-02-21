@@ -22,5 +22,8 @@
 	updateRefs = true
 	autoSquash = true
 
+[rerere]
+	enabled = true
+
 [include]
 	path = ~/.config/git/config.local
