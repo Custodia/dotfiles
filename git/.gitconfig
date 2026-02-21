@@ -1,7 +1,0 @@
-[user]
-	name = Jani Mäkelä
-	email = janimakelaa@gmail.com
-[commit]
-	gpgsign = true
-[include]
-	path = ~/.gitconfig.local

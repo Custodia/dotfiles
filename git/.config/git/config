@@ -1,0 +1,18 @@
+[user]
+	name = Jani Mäkelä
+	email = janimakelaa@gmail.com
+
+[commit]
+	gpgsign = true
+
+[tag]
+	gpgsign = true
+
+[fetch]
+	prune = true
+
+[pull]
+	ff = only
+
+[include]
+	path = ~/.config/git/config.local
