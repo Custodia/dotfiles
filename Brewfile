@@ -16,6 +16,12 @@ brew "node"
 
 ### CLI Improvements
 
+# Better "ls" bound to "lz"
+brew "eza"
+
+# Better "cd" bound to "zd"
+brew "zoxide"
+
 # Terminal fuzzy finder.
 # Used a lot by other scripts and tools.
 brew "fzf"
@@ -26,6 +32,17 @@ brew "jq"
 # Fast recursive file grep
 # Used by a lot of other scripts and tools
 brew "ripgrep"
+
+### Zsh
+
+# Prompt theme
+brew "powerlevel10k"
+
+# Command suggestions
+brew "zsh-autosuggestions"
+
+# Highlights command as red/green if invalid/valid
+brew "zsh-syntax-highlighting"
 
 ### CLI Tools
 

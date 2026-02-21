@@ -1,3 +1,5 @@
 #!/bin/bash
 
-stow -R zsh git wezterm nvim
+mkdir -p ~/.gnupg ~/.config ~/.config/tmux
+
+stow -R zsh bash git wezterm nvim tmux
