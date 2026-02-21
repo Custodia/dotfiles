@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Setup homebrew, check if it is installed first
 if ! command -v brew &> /dev/null; then
   echo "Homebrew is not installed. Install it from https://brew.sh/ and re-run this script."
