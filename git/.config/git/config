@@ -20,6 +20,7 @@
 
 [rebase]
 	updateRefs = true
+	autoSquash = true
 
 [include]
 	path = ~/.config/git/config.local
