@@ -14,9 +14,10 @@ brew install git stow
 brew bundle
 
 # Create local git config if it doesn't exist
-if [ ! -f "$HOME/.gitconfig.local" ]; then
-  echo "Creating ~/.gitconfig.local — replace YOUR_SIGNING_KEY with your GPG key ID."
-  cat > "$HOME/.gitconfig.local" << 'EOF'
+mkdir -p "$HOME/.config/git"
+if [ ! -f "$HOME/.config/git/config.local" ]; then
+  echo "Creating ~/.config/git/config.local — replace YOUR_SIGNING_KEY with your GPG key ID."
+  cat > "$HOME/.config/git/config.local" << 'EOF'
 [user]
 	signingkey = YOUR_SIGNING_KEY
 EOF
