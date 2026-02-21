@@ -18,5 +18,8 @@
 	autoSetupRemote = true
 	default = current
 
+[rebase]
+	updateRefs = true
+
 [include]
 	path = ~/.config/git/config.local
