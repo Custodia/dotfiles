@@ -14,5 +14,9 @@
 [pull]
 	ff = only
 
+[push]
+	autoSetupRemote = true
+	default = current
+
 [include]
 	path = ~/.config/git/config.local
