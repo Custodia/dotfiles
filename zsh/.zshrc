@@ -25,6 +25,12 @@ alias rg='rg --hidden --glob="!.git"'
 alias ls='ls -G'
 alias lz='eza --icons=always'
 
+# Initialise completion system
+autoload -Uz compinit && compinit
+
+# Git worktree wrapper (gwt) — function + completions loaded from script
+eval "$(git_worktree_manager init)"
+
 # Load tmuxifier
 export PATH="$HOME/.config/tmux/plugins/tmuxifier/bin:$PATH"
 export TMUXIFIER_LAYOUT_PATH="$HOME/.tmux-layouts/"
