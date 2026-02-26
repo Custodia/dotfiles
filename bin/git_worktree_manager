@@ -1,0 +1,341 @@
+#!/bin/bash
+
+resolve_worktree_path() {
+    local wt_name="$1"
+
+    # Full path given — use as-is
+    if [[ "$wt_name" == */* ]]; then
+        echo "$wt_name"
+        return
+    fi
+
+    # Short name — resolve relative to repo
+    local toplevel git_common_dir main_repo_dir repo_name
+    toplevel=$(git rev-parse --show-toplevel) || return 1
+    git_common_dir=$(cd "$toplevel" && git rev-parse --git-common-dir) || return 1
+    [[ "$git_common_dir" != /* ]] && git_common_dir="$toplevel/$git_common_dir"
+    main_repo_dir=$(dirname "$(realpath "$git_common_dir")")
+    repo_name=$(basename "$main_repo_dir")
+    echo "$(dirname "$main_repo_dir")/worktrees/$repo_name/$wt_name"
+}
+
+extract_tmux_flag() {
+    TMUX_FLAG=false
+    local filtered=()
+    for arg in "$@"; do
+        if [[ "$arg" == "-t" ]]; then
+            TMUX_FLAG=true
+        else
+            filtered+=("$arg")
+        fi
+    done
+    FILTERED_ARGS=("${filtered[@]}")
+}
+
+cmd_add() {
+    extract_tmux_flag "$@"
+    set -- "${FILTERED_ARGS[@]}"
+
+    local wt_name="$1"
+    shift
+
+    if [[ -z "$wt_name" ]]; then
+        echo "Usage: gwt add [-t] <name> [git flags/commit-ish]" >&2
+        return 1
+    fi
+
+    local wt_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+
+    mkdir -p "$(dirname "$wt_path")"
+    git worktree add "$wt_path" "$@" || return 1
+
+    if $TMUX_FLAG; then
+        tmux new-window -n "$wt_name" -c "$wt_path"
+    fi
+}
+
+cmd_path() {
+    local wt_name="$1"
+
+    if [[ -z "$wt_name" ]]; then
+        echo "Usage: gwt _path <name>" >&2
+        return 1
+    fi
+
+    local wt_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+
+    if [[ ! -d "$wt_path" ]]; then
+        echo "gwt: worktree directory does not exist: $wt_path" >&2
+        return 1
+    fi
+
+    echo "$wt_path"
+}
+
+cmd_list_names() {
+    local toplevel git_common_dir main_repo_dir repo_name wt_base_dir
+    toplevel=$(git rev-parse --show-toplevel 2>/dev/null) || return 0
+    git_common_dir=$(cd "$toplevel" && git rev-parse --git-common-dir 2>/dev/null) || return 0
+    [[ "$git_common_dir" != /* ]] && git_common_dir="$toplevel/$git_common_dir"
+    main_repo_dir=$(dirname "$(realpath "$git_common_dir")")
+    repo_name=$(basename "$main_repo_dir")
+    wt_base_dir="$(dirname "$main_repo_dir")/worktrees/$repo_name"
+
+    if [[ -d "$wt_base_dir" ]]; then
+        ls -1 "$wt_base_dir"
+    fi
+}
+
+cmd_list() {
+    git worktree list "$@"
+}
+
+cmd_remove() {
+    local remove_branch=false
+    local filtered=()
+    for arg in "$@"; do
+        [[ "$arg" == "-b" ]] && remove_branch=true || filtered+=("$arg")
+    done
+    set -- "${filtered[@]}"
+
+    local wt_name="$1"
+    shift
+
+    if [[ -z "$wt_name" ]]; then
+        echo "Usage: gwt remove [-b] <name> [flags]" >&2
+        return 1
+    fi
+
+    local wt_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+
+    local branch=""
+    if $remove_branch; then
+        branch=$(git -C "$wt_path" symbolic-ref --short HEAD 2>/dev/null) || true
+        [[ -z "$branch" ]] && echo "gwt: worktree is in detached HEAD state, skipping branch deletion" >&2
+    fi
+
+    git worktree remove "$wt_path" "$@" || return 1
+
+    if $remove_branch && [[ -n "$branch" ]]; then
+        git branch -D "$branch"
+    fi
+}
+
+cmd_lock() {
+    local wt_name="$1"
+    shift
+
+    if [[ -z "$wt_name" ]]; then
+        echo "Usage: gwt lock <name> [flags]" >&2
+        return 1
+    fi
+
+    local wt_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+    git worktree lock "$wt_path" "$@"
+}
+
+cmd_unlock() {
+    local wt_name="$1"
+
+    if [[ -z "$wt_name" ]]; then
+        echo "Usage: gwt unlock <name>" >&2
+        return 1
+    fi
+
+    local wt_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+    git worktree unlock "$wt_path"
+}
+
+cmd_move() {
+    local wt_name="$1"
+    local new_name="$2"
+
+    if [[ -z "$wt_name" || -z "$new_name" ]]; then
+        echo "Usage: gwt move <name> <new-name>" >&2
+        return 1
+    fi
+
+    local wt_path new_path
+    wt_path=$(resolve_worktree_path "$wt_name") || return 1
+    new_path=$(resolve_worktree_path "$new_name") || return 1
+    git worktree move "$wt_path" "$new_path"
+}
+
+cmd_prune() {
+    git worktree prune "$@"
+}
+
+cmd_repair() {
+    git worktree repair "$@"
+}
+
+cmd_help() {
+    cat <<'EOF'
+gwt — git worktree wrapper
+
+USAGE
+  gwt <subcommand> [flags] [args]
+
+SUBCOMMANDS
+  add [-t] <name> [commit-ish]   Create worktree at ../worktrees/<repo>/<name>
+                                   -t  open a new tmux window after creation
+  cd  [-t] <name>                Change directory into a worktree
+                                   -t  open a new tmux window instead
+  kill [-b] [-f|--force]         Remove the current linked worktree and close
+                                 its tmux window (switches to window 2)
+                                   -b          also delete the associated branch
+                                   -f|--force  passed to git worktree remove
+  list, ls  [flags]              List all worktrees (git worktree list)
+  remove, rm [-b] <name> [flags] Remove a worktree by name
+                                   -b  also delete the associated branch
+  move <name> <new-name>         Move a worktree to a new name/path
+  lock <name> [flags]            Lock a worktree
+  unlock <name>                  Unlock a worktree
+  prune [flags]                  Prune stale worktree admin files
+  repair [paths...]              Repair worktree admin files
+
+PATH RESOLUTION
+  Short names resolve to: <repo-parent>/worktrees/<repo-name>/<name>
+  If <name> contains a /, it is used as a literal path.
+EOF
+}
+
+cmd_init() {
+    cat <<'SHELL'
+gwt() {
+    if [[ "$1" == "cd" ]]; then
+        shift
+        local tmux_mode=false wt_name="" args=()
+        for arg in "$@"; do
+            [[ "$arg" == "-t" ]] && tmux_mode=true || args+=("$arg")
+        done
+        wt_name="${args[1]}"  # zsh 1-indexed
+        [[ -z "$wt_name" ]] && { echo "Usage: gwt cd [-t] <name>" >&2; return 1; }
+        local wt_path
+        wt_path=$(git_worktree_manager _path "$wt_name") || return 1
+        if $tmux_mode; then
+            tmux new-window -n "$wt_name" -c "$wt_path"
+        else
+            cd "$wt_path"
+        fi
+    elif [[ "$1" == "kill" ]]; then
+        shift
+        local remove_branch=false force=false
+        local _kill_args=()
+        for _kill_arg in "$@"; do
+            case "$_kill_arg" in
+                -b)         remove_branch=true ;;
+                -f|--force) force=true ;;
+                *)          _kill_args+=("$_kill_arg") ;;
+            esac
+        done
+
+        local wt_path git_dir
+        wt_path=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "gwt: not in a git repo" >&2; return 1; }
+        git_dir=$(git rev-parse --git-dir 2>/dev/null)
+        [[ "$git_dir" == ".git" || "$git_dir" == */.git ]] && { echo "gwt: not in a linked worktree" >&2; return 1; }
+
+        local branch=""
+        if $remove_branch; then
+            branch=$(git symbolic-ref --short HEAD 2>/dev/null) || true
+            [[ -z "$branch" ]] && echo "gwt: detached HEAD, skipping branch deletion" >&2
+        fi
+
+        local git_common_dir main_repo
+        git_common_dir=$(git rev-parse --git-common-dir)
+        [[ "$git_common_dir" != /* ]] && git_common_dir="$wt_path/$git_common_dir"
+        main_repo=$(dirname "$git_common_dir")
+
+        local window_id
+        window_id=$(tmux display-message -p '#I' 2>/dev/null)
+
+        cd "$main_repo"
+        local _remove_flags=()
+        $force && _remove_flags+=(--force)
+        if ! git worktree remove "${_remove_flags[@]}" "$wt_path"; then
+            cd "$wt_path"
+            return 1
+        fi
+        $remove_branch && [[ -n "$branch" ]] && git branch -D "$branch"
+
+        if [[ -n "$window_id" ]]; then
+            tmux select-window -t 2 2>/dev/null || tmux select-window -t:-
+            tmux kill-window -t "$window_id"
+        fi
+    else
+        git_worktree_manager "$@"
+    fi
+}
+
+_gwt() {
+    local state line
+    _arguments -C \
+        '1: :->subcommand' \
+        '*: :->args' && return 0
+
+    case $state in
+        subcommand)
+            local subcommands=(
+                'add:Create a new worktree'
+                'cd:Change directory to a worktree'
+                'list:List worktrees'
+                'ls:List worktrees (alias)'
+                'remove:Remove a worktree'
+                'rm:Remove a worktree (alias)'
+                'lock:Lock a worktree'
+                'unlock:Unlock a worktree'
+                'move:Move a worktree'
+                'kill:Remove current worktree, branch, and tmux window'
+                'prune:Prune worktree information'
+                'repair:Repair worktree administrative files'
+            )
+            _describe 'subcommand' subcommands
+            ;;
+        args)
+            case $line[1] in
+                cd|remove|rm|lock|unlock|move)
+                    local worktrees
+                    worktrees=(${(f)"$(git_worktree_manager _list_names 2>/dev/null)"})
+                    _values 'worktree' $worktrees
+                    ;;
+            esac
+            ;;
+    esac
+}
+(( ${+functions[compdef]} )) && compdef _gwt gwt
+SHELL
+}
+
+# Main dispatch
+subcommand="${1:-}"
+shift
+
+case "$subcommand" in
+    add)          cmd_add "$@" ;;
+    _path)        cmd_path "$@" ;;
+    _list_names)  cmd_list_names "$@" ;;
+    init)         cmd_init ;;
+    cd)
+        echo "gwt: 'cd' must be run via the gwt shell function" >&2
+        exit 1
+        ;;
+    list|ls)      cmd_list "$@" ;;
+    remove|rm)    cmd_remove "$@" ;;
+    lock)         cmd_lock "$@" ;;
+    unlock)       cmd_unlock "$@" ;;
+    move)         cmd_move "$@" ;;
+    prune)        cmd_prune "$@" ;;
+    repair)       cmd_repair "$@" ;;
+    help|--help)  cmd_help ;;
+    ""|"-h")      cmd_help ;;
+    *)
+        echo "gwt: unknown subcommand '$subcommand'" >&2
+        echo "Run 'gwt help' for usage." >&2
+        exit 1
+        ;;
+esac
